@@ -12,12 +12,13 @@ using std::vector;
 using std::set;
 #include <array>
 #include "stb_image.h"
+using std::array;
+
+// Assimp
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include "VulkanMeshModel.h"
-using std::array;
-
 #include "VulkanUtilities.h"
 #include "VulkanMesh.h"
 
@@ -45,6 +46,8 @@ public:
 	void clean();
 
 	void updateModel(int modelId, glm::mat4 modelP);
+	int createMeshModel(const std::string& filename);
+	void createColorBufferImage();
 
 private:
 	GLFWwindow* window;
@@ -100,6 +103,19 @@ private:
 	vk::Image depthBufferImage;
 	vk::DeviceMemory depthBufferImageMemory;
 	vk::ImageView depthBufferImageView;
+	vector<VkImage> textureImages;
+	vector<vk::ImageView> textureImageViews;
+	vector<VkDeviceMemory> textureImageMemory;
+	vk::Sampler textureSampler;
+	vk::DescriptorPool samplerDescriptorPool;
+	vk::DescriptorSetLayout samplerDescriptorSetLayout;
+	vector<vk::DescriptorSet> samplerDescriptorSets;
+	vector<VulkanMeshModel> meshModels;
+	vk::SampleCountFlagBits msaaSamples{ vk::SampleCountFlagBits::e1 };
+
+	vk::Image colorImage;
+	vk::DeviceMemory colorImageMemory;
+	vk::ImageView colorImageView;
 
 	// Instance
 	void createInstance();
@@ -127,8 +143,8 @@ private:
 	vk::SurfaceFormatKHR chooseBestSurfaceFormat(const vector<vk::SurfaceFormatKHR>& formats);
 	vk::PresentModeKHR chooseBestPresentationMode(const vector<vk::PresentModeKHR>& presentationModes);
 	vk::Extent2D chooseSwapExtent(const vk::SurfaceCapabilitiesKHR& surfaceCapabilities);
-	vk::ImageView createImageView(vk::Image image, vk::Format format, vk::ImageAspectFlagBits aspectFlags,
-	                              uint32_t mipLevels);
+	vk::ImageView createImageView(vk::Image image, vk::Format format, vk::ImageAspectFlagBits aspectFlags, uint32_t mipLevels);
+
 	// Graphics pipeline
 	void createGraphicsPipeline();
 	vk::ShaderModule createShaderModule(const vector<char>& code);
@@ -152,37 +168,20 @@ private:
 
 	// Push constants
 	void createPushConstantRange();
-	vk::Image createImage(uint32_t width, uint32_t height, uint32_t mipLevels, vk::SampleCountFlagBits numSamples,
-	                      vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags useFlags,
-	                      vk::MemoryPropertyFlags propFlags, vk::DeviceMemory* imageMemory);
 
 	// Depth
 	void createDepthBufferImage();
-	stbi_uc* loadTextureFile(const string& filename, int* width, int* height, vk::DeviceSize* imageSize);
-	int createTextureImage(const string& filename, uint32_t& mipLevels);
-	int createTexture(const string& filename);
-	int createTextureDescriptor(VkImageView textureImageView);
+	stbi_uc* loadTextureFile(const std::string& filename, int* width, int* height, vk::DeviceSize* imageSize);
+	int createTextureImage(const std::string& filename, uint32_t& mipLevels);
+	int createTexture(const std::string& filename);
+	
+	vk::Image createImage(uint32_t width, uint32_t height, uint32_t mipLevels, vk::SampleCountFlagBits numSamples, vk::Format format, vk::ImageTiling tiling,
+		vk::ImageUsageFlags useFlags, vk::MemoryPropertyFlags propFlags, vk::DeviceMemory* imageMemory);
 	vk::Format chooseSupportedFormat(const vector<vk::Format>& formats, vk::ImageTiling tiling, vk::FormatFeatureFlags featureFlags);
+	void createTextureSampler();
+	int createTextureDescriptor(vk::ImageView textureImageView);
 
 	// Draw
 	void createSynchronisation();
 
-	vector<VkImage> textureImages;
-	vector<vk::ImageView> textureImageViews;
-	vector<VkDeviceMemory> textureImageMemory;
-	vk::Sampler textureSampler;
-	void createTextureSampler();
-	vk::DescriptorPool samplerDescriptorPool;
-	vk::DescriptorSetLayout samplerDescriptorSetLayout;
-	vector<vk::DescriptorSet> samplerDescriptorSets;
-	int createTextureDescriptor(vk::ImageView textureImageView);
-	vector<VulkanMeshModel> meshModels;
-	vk::SampleCountFlagBits msaaSamples{ vk::SampleCountFlagBits::e1 };
-	vk::Image colorImage;
-	vk::DeviceMemory colorImageMemory;
-	vk::ImageView colorImageView;
-public :
-	int createMeshModel(string filename);
-	void createColorBufferImage();
 };
-
